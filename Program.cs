@@ -7,7 +7,8 @@
             string fileName = "tempdata5-med fel.txt";
             string path = "../../../";
 
-            List<WeatherRecord> allRecords = FileHandler.ReadDataFromFile(fileName, path);
+            List<WeatherRecord> allRecords = new List<WeatherRecord> ();
+            allRecords.ReadDataFromFile(fileName, path);
 
             while (true)
             {

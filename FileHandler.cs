@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 namespace WeaterData
 {
-    internal class FileHandler
-    {
-        public static List<WeatherRecord> ReadDataFromFile(string fileName, string path)
-        {
-            List<WeatherRecord> records = new List<WeatherRecord>();
+    public delegate void SaveToFileDelegate(string fileName, string path, IEnumerable<string> data);
 
+    internal static class FileHandler
+    {
+        public static List<WeatherRecord> ReadDataFromFile(this List<WeatherRecord> records, string fileName, string path)
+        {
             try
             {
                 using (StreamReader sr = new StreamReader(path + fileName))
@@ -50,7 +45,7 @@ namespace WeaterData
 
             return records;
         }
-        public static void SaveToFile(string fileName, string path, IEnumerable<string> data)
+        public static SaveToFileDelegate SaveToFile = (fileName, path, data) =>
         {
             try
             {
@@ -67,42 +62,24 @@ namespace WeaterData
             {
                 Console.WriteLine($"Error occurred while saving data to {fileName}: {ex.Message}");
             }
-        }
+        };
         public static void FileCreate(List<WeatherRecord> averageValues, string path)
         {
-            //file_for_average_temp
-
             List<string> dateAvgTemp = new List<string>();
-
-            string recordString = string.Empty;
-
-            string fileName = string.Empty;
-
-            foreach (var item in averageValues)
-            {
-                recordString = $"Date: {item.Date.ToShortDateString()}, Location: {item.Location}, Average Temperature: {item.Temperature:F1}";
-
-                dateAvgTemp.Add(recordString);
-            }
-
-            fileName = "average_temperature_data.txt";
-
-            FileHandler.SaveToFile(fileName, path, dateAvgTemp);
-
-            //file_for_average_humidity
-
             List<string> dateAvgHumidity = new List<string>();
 
             foreach (var item in averageValues)
             {
-                recordString = $"Date: {item.Date.ToShortDateString()}, Location: {item.Location}, Average Humidity: {item.Humidity:F1}%";
+                string recordTemp = $"Date: {item.Date.ToShortDateString()}, Location: {item.Location}, Average Temperature: {item.Temperature:F1}";
+                string recordHumidity = $"Date: {item.Date.ToShortDateString()}, Location: {item.Location}, Average Humidity: {item.Humidity:F1}%";
 
-                dateAvgHumidity.Add(recordString);
+                dateAvgTemp.Add(recordTemp);
+                dateAvgHumidity.Add(recordHumidity);
             }
 
-            fileName = "average_humidity_data.txt";
+            SaveToFile("average_temperature_data.txt", path, dateAvgTemp);
 
-            FileHandler.SaveToFile(fileName, path, dateAvgHumidity);
+            SaveToFile("average_humidity_data.txt", path, dateAvgHumidity);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,7 +30,18 @@ namespace WeaterData
             Dictionary<WeatherRecord, double> moldIndexValues = CalculateMoldIndexValues(records, toggleState);
             SaveMoldIndexValuesToFile(moldIndexValues, path);
             FileHandler.FileCreate(records, path);
+            DateTime startDate = new DateTime(2016 - 08 - 01);
+            DateTime endDate = new DateTime(2017 - 02 - 14);
+            DateTime? autuumDate = CalculateSeason(records, 10, startDate, endDate);
+            DateTime? winterDate = CalculateSeason(records, 0, null, null);
 
+
+            List<string> list = new List<string>();
+            list.Add(SaveAutuumWinterDate(autuumDate, "Autuum", records));
+            list.Add(SaveAutuumWinterDate(winterDate, "Winter", records));
+
+
+            FileHandler.SaveToFile("season_dates.txt", "../../../", list);
             while (true)
             {
                 Console.WriteLine("Toggle State: " + toggleState);
@@ -37,7 +49,8 @@ namespace WeaterData
                 Console.WriteLine("2. Average Temperatures");
                 Console.WriteLine("3. Average Humidities");
                 Console.WriteLine("4. Mold Index");
-                Console.WriteLine("5. Exit");
+                Console.WriteLine("5. Autumm");
+                Console.WriteLine("6. Exit");
                 Console.Write("Input: ");
                 int choice;
                 if (!int.TryParse(Console.ReadLine(), out choice))
@@ -61,6 +74,10 @@ namespace WeaterData
                         PrintMoldIndexValues(moldIndexValues, toggleState);
                         break;
                     case 5:
+                        Console.WriteLine(autuumDate.ToString());
+                        Console.WriteLine(winterDate.ToString());
+                        break;
+                    case 6:
                         Console.WriteLine("Exiting Weather Menu...");
                         return;
                     default:
@@ -156,9 +173,29 @@ namespace WeaterData
         private static void SaveMoldIndexValuesToFile(Dictionary<WeatherRecord, double> moldIndexValues, string path)
         {
             List<string> moldIndex = GetStringList(moldIndexValues);
-            FileHandler.SaveToFile("mold_index.txt", path, moldIndex);
 
+            Action<string, string, IEnumerable<string>> saveToFileAction = (fileName, savePath, data) =>
+            {
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter(savePath + fileName))
+                    {
+                        foreach (var line in data)
+                        {
+                            writer.WriteLine(line);
+                        }
+                    }
+                    Console.WriteLine($"Data saved to {fileName} successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error occurred while saving data to {fileName}: {ex.Message}");
+                }
+            };
+
+            saveToFileAction("mold_index.txt", path, moldIndex);
         }
+
 
         private static List<string> GetStringList(Dictionary<WeatherRecord, double> moldIndexValues)
         {
@@ -182,6 +219,68 @@ Algoritm för Mögelindexberäkning:
 Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden indikerar högre risk.";
             list.Add(moldAlgorith);
             return list;
+        }
+        private static List<WeatherRecord> CalculateValues(List<WeatherRecord> allValues, DateTime? startDate, DateTime? endDate)
+        {
+            var values = allValues.Where(x => x.Location == "Ute");
+
+            if (startDate != null && endDate != null)
+            {
+                values = values.Where(x => x.Date >= startDate && x.Date <= endDate);
+            }
+
+            List<WeatherRecord> filteredValues = values.ToList();
+
+            return filteredValues;
+
+        }
+        private static DateTime? CalculateSeason(List<WeatherRecord> allValues, double temperature, DateTime? startDate, DateTime? endDate)
+        {
+            int count = 0;
+            DateTime? autumnDate = null;
+
+            var values = allValues.Where(x => x.Location == "Ute").ToList();
+
+            while (true)
+            {
+                for (int i = 0; i < values.Count; i++)
+                {
+                    if (values[i].Temperature < temperature)
+                    {
+                        count++;
+                        if (count == 5)
+                        {
+                            int startIndex = i - 4;
+                            autumnDate = values[startIndex].Date;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        count = 0;
+                    }
+                }
+                if(autumnDate != null)
+                {
+                    return autumnDate;
+                }
+                else
+                {
+                    temperature += .2;
+                }
+            }
+        }
+        private static string SaveAutuumWinterDate(DateTime? date, string season, List<WeatherRecord> weatherRecords)
+        {
+            if (date.HasValue)
+            {
+                var specificDate = weatherRecords.FirstOrDefault(x => x.Date.ToShortDateString() == date.Value.ToShortDateString());
+                if (specificDate != null)
+                {
+                    return $"Date: {specificDate.Date.ToShortDateString()} Season: {season} Temperature: {specificDate.Temperature:F1}";
+                }
+            }
+            return string.Empty;
         }
     }
 }
