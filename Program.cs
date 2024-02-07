@@ -4,7 +4,15 @@
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            string fileName = "tempdata5-med fel.txt";
+            string path = "../../../";
+
+            List<WeatherRecord> allRecords = FileHandler.ReadDataFromFile(fileName, path);
+
+            while (true)
+            {
+                WeatherRecord.WeatherMenu(allRecords, path);
+            }
         }
     }
 }
