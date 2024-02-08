@@ -30,8 +30,9 @@ namespace WeaterData
             Dictionary<WeatherRecord, double> moldIndexValues = CalculateMoldIndexValues(records, toggleState);
             SaveMoldIndexValuesToFile(moldIndexValues, path);
             FileHandler.FileCreate(records, path);
-            DateTime startDate = new DateTime(2016 - 08 - 01);
-            DateTime endDate = new DateTime(2017 - 02 - 14);
+            DateTime startDate = new DateTime(2016, 08, 01);
+            DateTime endDate = new DateTime(2017, 02, 14);
+
             DateTime? autuumDate = CalculateSeason(records, 10, startDate, endDate);
             DateTime? winterDate = CalculateSeason(records, 0, null, null);
 
@@ -239,7 +240,10 @@ Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden in
             int count = 0;
             DateTime? autumnDate = null;
 
-            var values = allValues.Where(x => x.Location == "Ute").ToList();
+            var values = allValues.Where(x => x.Location == "Ute" &&
+                                       (!startDate.HasValue || x.Date >= startDate) &&
+                                       (!endDate.HasValue || x.Date <= endDate))
+                          .ToList();
 
             while (true)
             {
