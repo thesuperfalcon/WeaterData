@@ -83,6 +83,8 @@ namespace WeaterData
                     case 6:
                         SpecificDate(records);
                         return;
+                    case 7:
+                        Test(records); return;
 
                     default:
                         Console.WriteLine("Invalid choice. Please try again.");
@@ -320,6 +322,14 @@ Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden in
                 }
                 Console.WriteLine("Invalid date format. Get good at spelling pls...");
                 continue;
+            }
+        }
+        private static void Test(List<WeatherRecord> allRecords)
+        {
+            var records = allRecords.Where(x => x.Location == "Ute").ToList();
+            foreach(var weatherRecord in records)
+            {
+                Console.WriteLine($"{weatherRecord.Date.ToShortDateString()} {weatherRecord.Temperature:F1}");
             }
         }
     }
