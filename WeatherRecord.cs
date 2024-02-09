@@ -32,9 +32,11 @@ namespace WeaterData
             FileHandler.FileCreate(records, path);
             DateTime startDate = new DateTime(2016, 08, 01);
             DateTime endDate = new DateTime(2017, 02, 14);
+            double weatherTemp;
+            double weatherTamp;
 
-            DateTime? autuumDate = CalculateSeason(records, 10, startDate, endDate);
-            DateTime? winterDate = CalculateSeason(records, 0, null, null);
+            WeatherRecord autuumDate = CalculateSeason(records, 10, startDate, endDate);
+            WeatherRecord winterDate = CalculateSeason(records, 0, null, null);
 
 
             List<string> list = new List<string>();
@@ -50,8 +52,8 @@ namespace WeaterData
                 Console.WriteLine("2. Average Temperatures");
                 Console.WriteLine("3. Average Humidities");
                 Console.WriteLine("4. Mold Index");
-                Console.WriteLine("5. Autumm");
-                Console.WriteLine("6. Exit");
+                Console.WriteLine("5. Seasons");
+                Console.WriteLine("6. Search specific date");
                 Console.Write("Input: ");
                 int choice;
                 if (!int.TryParse(Console.ReadLine(), out choice))
@@ -75,12 +77,13 @@ namespace WeaterData
                         PrintMoldIndexValues(moldIndexValues, toggleState);
                         break;
                     case 5:
-                        Console.WriteLine(autuumDate.ToString());
-                        Console.WriteLine(winterDate.ToString());
+                        Console.WriteLine($"Autuum: {autuumDate.Date.ToShortDateString()} Temperature: {autuumDate.Temperature:F1}");
+                        Console.WriteLine($"Winter: {winterDate.Date.ToShortDateString()} Temperature: {winterDate.Temperature:F1}");
                         break;
                     case 6:
-                        Console.WriteLine("Exiting Weather Menu...");
+                        SpecificDate(records);
                         return;
+
                     default:
                         Console.WriteLine("Invalid choice. Please try again.");
                         break;
@@ -143,7 +146,7 @@ namespace WeaterData
 
             foreach (var avg in averageValues)
             {
-                if (avg.Temperature < 0 || avg.Temperature > 50 || avg.Humidity < 78 || avg.Humidity > 100)
+                if (avg.Temperature < 0 || avg.Temperature > 50 || avg.Humidity < 78)
                 {
                     values.Add(avg, 0);
                     continue;
@@ -235,10 +238,10 @@ Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden in
             return filteredValues;
 
         }
-        private static DateTime? CalculateSeason(List<WeatherRecord> allValues, double temperature, DateTime? startDate, DateTime? endDate)
+        private static WeatherRecord CalculateSeason(List<WeatherRecord> allValues, double temperature, DateTime? startDate, DateTime? endDate)
         {
             int count = 0;
-            DateTime? autumnDate = null;
+            DateTime? seasonDate = null;
 
             var values = allValues.Where(x => x.Location == "Ute" &&
                                        (!startDate.HasValue || x.Date >= startDate) &&
@@ -255,7 +258,7 @@ Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden in
                         if (count == 5)
                         {
                             int startIndex = i - 4;
-                            autumnDate = values[startIndex].Date;
+                            seasonDate = values[startIndex].Date;
                             break;
                         }
                     }
@@ -264,27 +267,60 @@ Obs: Mögelindexvärden indikerar risken för mögeltillväxt. Högre värden in
                         count = 0;
                     }
                 }
-                if(autumnDate != null)
+                if(seasonDate != null)
                 {
-                    return autumnDate;
+                    var date = allValues.Where(x => x.Date == seasonDate).FirstOrDefault();
+                    return date;
                 }
                 else
                 {
-                    temperature += .2;
+                    temperature += .1;
                 }
             }
         }
-        private static string SaveAutuumWinterDate(DateTime? date, string season, List<WeatherRecord> weatherRecords)
+        private static string SaveAutuumWinterDate(WeatherRecord date, string season, List<WeatherRecord> weatherRecords)
         {
-            if (date.HasValue)
+            if (date != null)
             {
-                var specificDate = weatherRecords.FirstOrDefault(x => x.Date.ToShortDateString() == date.Value.ToShortDateString());
+                var specificDate = weatherRecords.FirstOrDefault(x => x.Date.ToShortDateString() == date.Date.ToShortDateString());
                 if (specificDate != null)
                 {
                     return $"Date: {specificDate.Date.ToShortDateString()} Season: {season} Temperature: {specificDate.Temperature:F1}";
                 }
             }
             return string.Empty;
+        }
+        private static void SpecificDate(List<WeatherRecord> allRecords)
+        {
+            bool success = false;
+            while (!success)
+            {
+                DateTime date = DateTime.Now;
+                Console.Write("Date (yyyy-mm-dd):");
+                if (DateTime.TryParse(Console.ReadLine(), out date))
+                {
+                    var specificDate = allRecords.Where(x => x.Date == date).ToList();
+
+                    if (specificDate.Any())
+                    {
+                        Console.WriteLine(date.ToShortDateString());
+                        foreach (var day in specificDate)
+                        {
+                            Console.WriteLine($"Location: {day.Location} Temperature: {day.Temperature:F1} Humditiy: {day.Humidity:F1}%");
+                        }
+                        Console.ReadLine();
+                        Console.Clear();
+                        success = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("No records found for the date. Try with another date...");
+                        continue;
+                    }
+                }
+                Console.WriteLine("Invalid date format. Get good at spelling pls...");
+                continue;
+            }
         }
     }
 }

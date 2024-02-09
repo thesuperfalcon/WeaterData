@@ -15,7 +15,7 @@ namespace WeaterData
                     string line;
                     while ((line = sr.ReadLine()) != null)
                     {
-                        Match match = Regex.Match(line, @"(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}),(\w+),([\d.]+),(\d+)");
+                        Match match = Regex.Match(line, @"(?<date>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}),(?<location>\w+),(?<temperature>[\d.]+),(?<humidity>\d+)");
                         if (match.Success)
                         {
                             DateTime date;
